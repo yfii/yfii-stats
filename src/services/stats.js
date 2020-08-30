@@ -47,7 +47,7 @@ let vaults = [
 
 // 获取配置文件
 export async function getVaultsConfig() {
-  const res = await axios.get('/configs/config.json');
+  const res = await axios.get('https://raw.githubusercontent.com/yfii/yvault/master/contracts/standard/config.json');
   if (res.status === 200) {
     return res.data;
   }

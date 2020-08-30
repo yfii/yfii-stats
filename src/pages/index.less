@@ -1,7 +1,38 @@
-
-.normal {
-}
-
-.title {
-  background: rgb(121, 242, 157);
+.statsPage {
+  margin-top: 35px;
+  .list {
+    background-color: #fff;
+    margin: 0;
+    padding: 12px 16px;
+    .listItem {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-content: center;
+      background-color: #fff;
+      line-height: 32px;
+      border-bottom: 1px solid #e6e6e6;
+      font-weight: bold;
+      &:last-child {
+        border-bottom-color: #fff;
+      }
+    }
+  }
+  .title {
+    text-align: center;
+  }
+  .content {
+    h2 {
+      text-align: left;
+    }
+    .table {
+      background-color: #fff;
+      a {
+        text-decoration: none;
+      }
+    }
+  }
+  .tableLoading {
+    height: 600px;
+  }
 }

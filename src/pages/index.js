@@ -66,7 +66,7 @@ const StatsPage = ({
                     <TableRow>
                       <TableCell>Asset</TableCell>
                       <TableCell align="right">Strategy</TableCell>
-                      <TableCell align="right">APY daily / weekly</TableCell>
+                      <TableCell align="right">ROI weekly / APY weekly</TableCell>
                       <TableCell align="right">Liquidity in vault</TableCell>
                       {/* <TableCell align="right">Invested by strategy</TableCell> */}
                     </TableRow>
@@ -96,17 +96,14 @@ const StatsPage = ({
                                 </a>
                               </TableCell>
                               <TableCell align="right">
-                                {/* <div>
-                                  {
-                                    row.yfiiDailyROI ? (
-                                  <span>{+row.yfiiDailyROI}% / {+row.yfiiWeeklyROI}%</span>
-                                    ) : null
-                                  }
-                                </div> */}
                                 <div>
                                   {
                                     row.yfiiDailyAPY ? (
-                                      <span>{+row.yfiiDailyAPY}% / {+row.yfiiWeeklyAPY}%</span>
+                                      <span>
+                                        {+row.yfiiWeeklyROI || '-'}
+                                        % /
+                                        {+row.yfiiWeeklyAPY || '-'}%
+                                      </span>
                                     ) : null
                                   }
                                 </div>

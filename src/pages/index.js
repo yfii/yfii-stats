@@ -96,11 +96,20 @@ const StatsPage = ({
                                 </a>
                               </TableCell>
                               <TableCell align="right">
-                                {
-                                  row.yfiiDailyAPY ? (
-                                    <span>{row.yfiiDailyAPY}% / {row.yfiiWeeklyAPY}%</span>
-                                  ) : null
-                                }
+                                {/* <div>
+                                  {
+                                    row.yfiiDailyROI ? (
+                                  <span>{+row.yfiiDailyROI}% / {+row.yfiiWeeklyROI}%</span>
+                                    ) : null
+                                  }
+                                </div> */}
+                                <div>
+                                  {
+                                    row.yfiiDailyAPY ? (
+                                      <span>{+row.yfiiDailyAPY}% / {+row.yfiiWeeklyAPY}%</span>
+                                    ) : null
+                                  }
+                                </div>
                               </TableCell>
                               <TableCell align="right">
                                 <span>{(+row.balance).toLocaleString()}</span>

@@ -180,11 +180,15 @@ export async function getStrategyAPY(list) {
         strategyName.indexOf('ZOMBIE') > -1
       ) {
         let strategyNameType;
+        let vaultToken;
         if (strategyName.indexOf('GRAP') > -1) {
           strategyNameType = 'grap';
+          vaultToken = 'grap-finance';
         } else if (strategyName.indexOf('ZOMBIE') > -1) {
           strategyNameType = 'zombie';
+          vaultToken = 'zombie-finance';
         }
+        // 获取投资池子地址
         const pool = await strategyContract.methods.pool().call();
         const { rewardRate, totalSupply } = await getGrapPoolInfo(pool, strategyNameType, name);
         // 产出
@@ -193,32 +197,33 @@ export async function getStrategyAPY(list) {
         // 产出比例
         const daily_rewardPerToken = daily_reward / totalSupply;
         const weekly_rewardPerToken = weekly_reward / totalSupply;
-        // 价格
-        const vaultPrice = getTokenPrice(list, name);
-        const yfiiPrice = getTokenPrice(list, 'YFII');
-        // ROI
-        const yfiiDailyROI = (daily_rewardPerToken * yfiiPrice) * 100 / (vaultPrice);
-        const yfiiWeeklyROI = (weekly_rewardPerToken * yfiiPrice) * 100 / (vaultPrice);
+        // 挖出币价格
+        const strategyPrice = await getTokenPrice(list, vaultToken);
+        // 本金币价格
+        const vaultPrice = await getTokenPrice(list, name);
+        // ROI = 日产出比 & 挖出币的价格 * 100 / 本金
+        const yfiiDailyROI = (daily_rewardPerToken * strategyPrice) * 100 / (vaultPrice);
+        const yfiiWeeklyROI = (weekly_rewardPerToken * strategyPrice) * 100 / (vaultPrice);
         // APY
-        yfiiDailyAPY = toFixed(((1 + (yfiiDailyROI / 100))**365 - 1) * 100, 4);
-        yfiiWeeklyAPY = toFixed(((1 + (yfiiWeeklyROI / 100))**52 - 1) * 100, 4);
+        yfiiDailyAPY = ((1 + (yfiiDailyROI / 100))**365 - 1) * 100;
+        yfiiWeeklyAPY = ((1 + (yfiiWeeklyROI / 100))**52 - 1) * 100;
 
-        // console.log(177);
-        // console.log('name', name);
-        // console.log('reward', daily_reward, weekly_reward);
-        // console.log('rewardPerToken', daily_rewardPerToken, weekly_rewardPerToken);
-        // console.log('price', vaultPrice, yfiiPrice);
-        // console.log('ROI', yfiiDailyROI, yfiiWeeklyROI);
-        // console.log(181, name, 'Daily ROI in USD', `${toFixed(yfiiDailyROI, 4)}%`);
-        // console.log(182, name, 'APY (Daily)', `${toFixed(((1 + (yfiiDailyROI / 100))**365 - 1) * 100, 4)}%`);
-        // console.log(181, name, 'Weekly ROI in USD', `${toFixed(yfiiWeeklyROI, 4)}%`);
-        // console.log(182, name, 'APY (Weekly)', `${toFixed(((1 + (yfiiWeeklyROI / 100))**52 - 1) * 100, 4)}%`);
+        console.log(177);
+        console.log('name', name);
+        console.log('reward', daily_reward, weekly_reward);
+        console.log('rewardPerToken', daily_rewardPerToken, weekly_rewardPerToken);
+        console.log('price', strategyPrice, vaultPrice);
+        console.log('ROI', yfiiDailyROI, yfiiWeeklyROI);
+        console.log(181, name, 'Daily ROI in USD', `${toFixed(yfiiDailyROI, 4)}%`);
+        console.log(182, name, 'APY (Daily)', `${toFixed(((1 + (yfiiDailyROI / 100))**365 - 1) * 100, 4)}%`);
+        console.log(181, name, 'Weekly ROI in USD', `${toFixed(yfiiWeeklyROI, 4)}%`);
+        console.log(182, name, 'APY (Weekly)', `${toFixed(((1 + (yfiiWeeklyROI / 100))**52 - 1) * 100, 4)}%`);
         return {
           ...item,
-          // yfiiDailyROI,
-          // yfiiWeeklyROI,
-          yfiiDailyAPY,
-          yfiiWeeklyAPY,
+          yfiiDailyROI: toFixed(yfiiDailyROI, 4),
+          yfiiWeeklyROI: toFixed(yfiiWeeklyROI, 4),
+          yfiiDailyAPY: toFixed(yfiiDailyAPY, 4),
+          yfiiWeeklyAPY: toFixed(yfiiWeeklyAPY, 4),
         };
       }
       // Curve 池年华计算
@@ -317,7 +322,7 @@ export async function getStrategyBalance(contract, tokenInfo) {
 
 // 获取法币报价
 export async function fetchTokenPrice(data) {
-  const tokens = data.map((item) => (item.id || item.name).toLocaleLowerCase());
+  let tokens = data.map((item) => (item.id || item.name).toLocaleLowerCase());
   const res = await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${tokens}&vs_currencies=usd`);
   return data.map((item) => {
     const { name, balance } = item;
@@ -341,11 +346,17 @@ export async function fetchTokenPrice(data) {
 }
 
 // 遍历获取 token 价格
-export function getTokenPrice(list, token) {
+export async function getTokenPrice(list, token) {
   const index = list.findIndex((item) => item.name === token);
-  const { price } = list[index];
-  // console.log('getTokenPrice', token, price.usd);
-  return price.usd;
+  let usd = 0;
+  if (index > -1) {
+    const { price } = list[index];
+    usd = price.usd;
+  } else {
+    const { data } = await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${token}&vs_currencies=usd`);
+    usd = data[token].usd;
+  }
+  return usd;
 }
 
 const toFixed = function(num, fixed) {

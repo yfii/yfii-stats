@@ -270,8 +270,8 @@ export async function getCurveAPY(token) {
   }
   // console.log(token, yfiiDailyAPY, yfiiWeeklyAPY);
   return [
-    toFixed(yfiiDailyAPY, 4),
-    toFixed(yfiiWeeklyAPY, 4)
+    toFixed(yfiiDailyAPY * 100, 4),
+    toFixed(yfiiWeeklyAPY * 100, 4)
   ];
 }
 

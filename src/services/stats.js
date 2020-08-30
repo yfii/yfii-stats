@@ -201,7 +201,7 @@ export async function getStrategyAPY(list) {
         const strategyPrice = await getTokenPrice(list, vaultToken);
         // 本金币价格
         const vaultPrice = await getTokenPrice(list, name);
-        // ROI = 日产出比 & 挖出币的价格 * 100 / 本金
+        // ROI = 日产出占比 & 挖出币的价格 * 100 / 本金
         const yfiiDailyROI = (daily_rewardPerToken * strategyPrice) * 100 / (vaultPrice);
         const yfiiWeeklyROI = (weekly_rewardPerToken * strategyPrice) * 100 / (vaultPrice);
         // APY

@@ -54,13 +54,38 @@ let vaults = [
   },
 ];
 
+// 策略池配置
+const STRATEGYPOOLS = {
+  "GRAP": {
+    // 池子名称 => 对应 /public/abi/${name}
+    strategyNameType: 'grap',
+    // 挖出币的交易所 id => 对应 /public/configs/coingecko-coin.json 相应的 id
+    vaultToken: 'grap-finance',
+  },
+  "ZOMBIE.FINANCE": {
+    strategyNameType: 'zombie',
+    vaultToken: 'zombie-finance',
+  },
+  "YFII.finance": {
+    strategyNameType: 'yfii',
+    vaultToken: 'yfii-finance',
+  },
+};
+
 // 获取配置文件
 export async function getVaultsConfig() {
-  const res = await axios.get('/config/config.json');
+  const res = await axios.get('/configs/config.json');
   if (res.status === 200) {
     return res.data;
   }
   return [];
+}
+
+// 获取 Strategy 配置
+export function getStrategyPool(strategyName) {
+  const [, name] = strategyName.split(':');
+  console.log(86, name, STRATEGYPOOLS[name]);
+  return STRATEGYPOOLS[name];
 }
 
 // 合并机枪池配置至本地配置
@@ -191,23 +216,17 @@ export async function getStrategyAPY(list) {
       let yfiiDailyAPY = 0;
       let yfiiWeeklyAPY = 0;
       let yfiiAPY = 0;
-      // grap 池 && zombie 池年华计算
-      if (
-        strategyName.indexOf('GRAP') > -1 ||
-        strategyName.indexOf('ZOMBIE') > -1
-      ) {
-        let strategyNameType;
-        let vaultToken;
-        if (strategyName.indexOf('GRAP') > -1) {
-          strategyNameType = 'grap';
-          vaultToken = 'grap-finance';
-        } else if (strategyName.indexOf('ZOMBIE') > -1) {
-          strategyNameType = 'zombie';
-          vaultToken = 'zombie-finance';
-        }
+      let pool;
+      try {
         // 获取投资池子地址
-        const pool = await strategyContract.methods.pool().call();
-        const { rewardRate, totalSupply } = await getGrapPoolInfo(
+        pool = await strategyContract.methods.pool().call();
+      } catch (e) {
+      }
+      // grap 池 && zombie 池年华计算
+      if (pool) {
+        // 策略池子名称, 挖出的 token
+        const { strategyNameType, vaultToken } = getStrategyPool(strategyName);
+        const { rewardRate, totalSupply } = await getPoolInfo(
           pool,
           strategyNameType,
           name,
@@ -269,6 +288,11 @@ export async function getStrategyAPY(list) {
           'APY (Weekly)',
           `${toFixed(((1 + yfiiWeeklyROI / 100) ** 52 - 1) * 100, 4)}%`,
         );
+        console.log(
+          name,
+          'APY (unstable)',
+          `${toFixed(yfiiAPY * 100, 4)}%`,
+        );
         return {
           ...item,
           yfiiDailyROI: toFixed(yfiiDailyROI, 4),
@@ -295,7 +319,7 @@ export async function getStrategyAPY(list) {
 }
 
 // 获取投资池子 & totalSupply
-export async function getGrapPoolInfo(pool, strategy, token) {
+export async function getPoolInfo(pool, strategy, token) {
   let poolConract;
   let abi = await axios.get(`/abi/${strategy}/${token}.json`);
   try {
@@ -406,14 +430,19 @@ export async function fetchTokenPrice(data) {
 export async function getTokenPrice(list, token) {
   const index = list.findIndex(item => item.name === token);
   let usd = 0;
-  if (index > -1) {
-    const { price } = list[index];
-    usd = price.usd;
-  } else {
-    const { data } = await axios.get(
-      `https://api.coingecko.com/api/v3/simple/price?ids=${token}&vs_currencies=usd`,
-    );
-    usd = data[token].usd;
+  try {
+    if (index > -1) {
+      const { price } = list[index];
+      usd = price.usd;
+    } else {
+      console.log(435, token);
+      const { data } = await axios.get(
+        `https://api.coingecko.com/api/v3/simple/price?ids=${token}&vs_currencies=usd`,
+      );
+      usd = data[token].usd;
+    }
+  } catch (e) {
+    console.log(e);
   }
   return usd;
 }

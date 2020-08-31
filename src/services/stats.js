@@ -215,9 +215,11 @@ export async function getStrategyAPY(list) {
         // 产出
         const daily_reward = rewardRate * 86400;
         const weekly_reward = rewardRate * 604800;
+        const year_reward = rewardRate * 31536000;
         // 产出比例
         const daily_rewardPerToken = daily_reward / totalSupply;
         const weekly_rewardPerToken = weekly_reward / totalSupply;
+        const year_rewardPerToken = year_reward / totalSupply;
         // 挖出币价格
         const strategyPrice = await getTokenPrice(list, vaultToken);
         // 本金币价格
@@ -227,10 +229,13 @@ export async function getStrategyAPY(list) {
           (daily_rewardPerToken * strategyPrice * 100) / vaultPrice;
         const yfiiWeeklyROI =
           (weekly_rewardPerToken * strategyPrice * 100) / vaultPrice;
+        const yfiiYearROI =
+          (year_rewardPerToken * strategyPrice * 100) / vaultPrice;
+
         // APY
         yfiiDailyAPY = ((1 + yfiiDailyROI / 100) ** 365 - 1) * 100;
         yfiiWeeklyAPY = ((1 + yfiiWeeklyROI / 100) ** 52 - 1) * 100;
-        yfiiAPY = yfiiWeeklyROI * 52;
+        yfiiAPY = yfiiYearROI;
 
         console.log(177);
         console.log(name, 'rewardRate', rewardRate);

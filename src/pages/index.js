@@ -15,21 +15,16 @@ import { Description } from '@material-ui/icons';
 
 import styles from './index.less';
 
-const StatsPage = ({
-  stats,
-}) => {
-
+const StatsPage = ({ stats }) => {
   const { vaultsList } = stats;
 
   let total = 0;
-  vaultsList.forEach((item) => total += +item.balancePrice );
+  vaultsList.forEach(item => (total += +item.balancePrice));
 
   return (
     <div className={styles.statsPage}>
       <Container>
-        <h1 className={styles.title}>
-          Total Value Locked
-        </h1>
+        <h1 className={styles.title}>Total Value Locked</h1>
         <Box
           display="flex"
           flexDirection="row"
@@ -52,12 +47,7 @@ const StatsPage = ({
           </Grid>
         </Box>
         <Box className={styles.content}>
-          <Grid
-            container
-            direction="row"
-            justify="center"
-            alignItems="center"
-          >
+          <Grid container direction="row" justify="center" alignItems="center">
             <Grid item xs={12}>
               <h2>vaults</h2>
               <TableContainer>
@@ -66,91 +56,98 @@ const StatsPage = ({
                     <TableRow>
                       <TableCell>Asset</TableCell>
                       <TableCell align="right">Strategy</TableCell>
-                      <TableCell align="right">ROI weekly / APY weekly</TableCell>
+                      <TableCell align="right">ROI weekly / APY</TableCell>
                       <TableCell align="right">Liquidity in vault</TableCell>
                       {/* <TableCell align="right">Invested by strategy</TableCell> */}
                     </TableRow>
                   </TableHead>
-                  {
-                    (vaultsList || []).length ? (
-                      <TableBody>
-                        {
-                          (vaultsList || []).map((row) => (
-                            <TableRow key={row.token}>
-                              <TableCell>
-                                <Box
-                                  display="flex"
-                                  flexDirection="row"
-                                  alignItems="center"
+                  {(vaultsList || []).length ? (
+                    <TableBody>
+                      {(vaultsList || [])
+                        .filter(fi => +fi.balance > 0)
+                        .map(row => (
+                          <TableRow key={row.token}>
+                            <TableCell>
+                              <Box
+                                display="flex"
+                                flexDirection="row"
+                                alignItems="center"
+                              >
+                                <a
+                                  href={`https://etherscan.io/address/${row.vault}`}
+                                  target="_blank"
                                 >
-                                  <a href={`https://etherscan.io/address/${row.vault}`} target="_blank">
-                                    <Description fontSize="small"/>
-                                  </a>
-                                  <span>{row.assetName}</span>
-                                  (<a href={`https://etherscan.io/token/${row.token}`} target="_blank">{row.name}</a>)
-                                </Box>
-                              </TableCell>
-                              <TableCell align="right">
-                                <a href={`https://etherscan.io/address/${row.strategy}`} target="_blank">
-                                  {row.strategyName}
+                                  <Description fontSize="small" />
                                 </a>
-                              </TableCell>
-                              <TableCell align="right">
-                                <div>
-                                  {
-                                    row.yfiiDailyAPY ? (
-                                      <span>
-                                        {+row.yfiiWeeklyROI || '-'}
-                                        % /
-                                        {+row.yfiiWeeklyAPY || '-'}%
-                                      </span>
-                                    ) : null
-                                  }
-                                </div>
-                              </TableCell>
-                              <TableCell align="right">
-                                <span>{(+row.balance).toLocaleString()}</span>
-                                &nbsp;
-                                <a href={`https://etherscan.io/token/${row.token}`} target="_blank">
+                                <span>{row.assetName}</span>(
+                                <a
+                                  href={`https://etherscan.io/token/${row.token}`}
+                                  target="_blank"
+                                >
                                   {row.name}
                                 </a>
-                                &nbsp;
-                                (${(+row.balancePrice).toLocaleString()})
-                              </TableCell>
-                              {/* <TableCell align="right">
+                                )
+                              </Box>
+                            </TableCell>
+                            <TableCell align="right">
+                              <a
+                                href={`https://etherscan.io/address/${row.strategy}`}
+                                target="_blank"
+                              >
+                                {row.strategyName}
+                              </a>
+                            </TableCell>
+                            <TableCell align="right">
+                              <div>
+                                {row.yfiiDailyAPY ? (
+                                  <span>
+                                    {+row.yfiiWeeklyROI || '-'}% /
+                                    {+row.yfiiAPY || '-'}%
+                                  </span>
+                                ) : null}
+                              </div>
+                            </TableCell>
+                            <TableCell align="right">
+                              <span>{(+row.balance).toLocaleString()}</span>
+                              &nbsp;
+                              <a
+                                href={`https://etherscan.io/token/${row.token}`}
+                                target="_blank"
+                              >
+                                {row.name}
+                              </a>
+                              &nbsp; (${(+row.balancePrice).toLocaleString()})
+                            </TableCell>
+                            {/* <TableCell align="right">
                                 <span>{(+row.strategyBalance).toLocaleString()}</span>
                                 &nbsp;
                                 <a href={`https://etherscan.io/token/${row.token}`} target="_blank">
                                   {row.name}
                                 </a>
                               </TableCell> */}
-                            </TableRow>
-                          ))
-                        }
-                      </TableBody>
-                    ) : null
-                  }
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  ) : null}
                 </Table>
               </TableContainer>
-              {
-                (vaultsList || []).length ? null : (
-                  <Box
-                    display="flex"
-                    flexDirection="columns"
-                    justifyContent="center"
-                    alignItems="center"
-                    className={styles.tableLoading}
-                  >
-                    <CircularProgress />
-                  </Box>
-                )
-              }
+              {(vaultsList || []).length ? null : (
+                <Box
+                  display="flex"
+                  flexDirection="columns"
+                  justifyContent="center"
+                  alignItems="center"
+                  className={styles.tableLoading}
+                >
+                  <CircularProgress />
+                </Box>
+              )}
             </Grid>
           </Grid>
         </Box>
       </Container>
     </div>
   );
-}
+};
 
 export default connect(({ stats }) => ({ stats }))(StatsPage);

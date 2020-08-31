@@ -13,41 +13,50 @@ let vaults = [
   {
     name: 'SNX',
     id: 'havven',
-  }, {
+  },
+  {
     name: 'LEND',
     id: 'ethlend',
-  }, {
+  },
+  {
     name: 'MKR',
     id: 'maker',
-  }, {
+  },
+  {
     name: 'YFI',
     id: 'yearn-finance',
-  }, {
+  },
+  {
     name: 'COMP',
     id: 'compound-coin',
-  }, {
+  },
+  {
     name: 'WBTC',
     id: 'wrapped-bitcoin',
-  }, {
+  },
+  {
     name: 'YCRV',
     id: 'curve-fi-ydai-yusdc-yusdt-ytusd',
     curveName: 'y',
-  }, {
+  },
+  {
     name: 'YFII',
     id: 'yfii-finance',
-  }, {
+  },
+  {
     name: 'USDC',
     id: 'usd-coin',
-  }, {
+  },
+  {
     name: 'CCRV(cDAI+cUSDC)',
     id: 'curve-fi-ydai-yusdc-yusdt-ytusd',
     curveName: 'compound',
-  }
+  },
 ];
 
 // 获取配置文件
 export async function getVaultsConfig() {
-  const res = await axios.get('https://raw.githubusercontent.com/yfii/yvault/master/contracts/standard/config.json');
+  const res = await axios.get('/config/config.json');
   if (res.status === 200) {
     return res.data;
   }
@@ -58,7 +67,7 @@ export async function getVaultsConfig() {
 export async function getVaultsList() {
   const config = await getVaultsConfig();
   let commonBack = await Promise.all(
-    (config || []).map(async (item) => {
+    (config || []).map(async item => {
       // 初始化合约
       const {
         tokenContract,
@@ -68,7 +77,7 @@ export async function getVaultsList() {
       // 获取币种信息
       let tokenInfo = await getTokenInfo(tokenContract, item);
       // 获取池子名称
-      let assetName = await getAssetName(vaultContract) || item.assetName;
+      let assetName = (await getAssetName(vaultContract)) || item.assetName;
       // 获取池子余额
       let balance = await getBalance(vaultContract, tokenInfo);
       // 获取策略名称
@@ -79,7 +88,7 @@ export async function getVaultsList() {
         // 获取策略池内余额
         strategyBalance = await getStrategyBalance(strategyContract, tokenInfo);
       }
-      let index = vaults.findIndex((fi) => fi.name === item.name);
+      let index = vaults.findIndex(fi => fi.name === item.name);
       let vaultsData = {};
       if (index > -1) {
         vaultsData = vaults[index];
@@ -94,7 +103,7 @@ export async function getVaultsList() {
         vaultContract,
         ...vaultsData,
       };
-    })
+    }),
   );
   // 批量获取交易所法币报价
   const priceBackData = await fetchTokenPrice(commonBack);
@@ -119,7 +128,7 @@ export async function initContract(item) {
     tokenContract,
     vaultContract,
     strategyContract,
-  }
+  };
 }
 
 // 获取必要 token 信息
@@ -170,10 +179,18 @@ export async function getStrategyName(contract) {
 // 获取年华率
 export async function getStrategyAPY(list) {
   const apyBackList = await Promise.all(
-    list.map(async (item) => {
-      const { name, curveName, balance, strategy, strategyName, strategyContract } = item;
+    list.map(async item => {
+      const {
+        name,
+        curveName,
+        balance,
+        strategy,
+        strategyName,
+        strategyContract,
+      } = item;
       let yfiiDailyAPY = 0;
       let yfiiWeeklyAPY = 0;
+      let yfiiAPY = 0;
       // grap 池 && zombie 池年华计算
       if (
         strategyName.indexOf('GRAP') > -1 ||
@@ -190,9 +207,13 @@ export async function getStrategyAPY(list) {
         }
         // 获取投资池子地址
         const pool = await strategyContract.methods.pool().call();
-        const { rewardRate, totalSupply } = await getGrapPoolInfo(pool, strategyNameType, name);
+        const { rewardRate, totalSupply } = await getGrapPoolInfo(
+          pool,
+          strategyNameType,
+          name,
+        );
         // 产出
-        const daily_reward =  Math.round(rewardRate * 86400);
+        const daily_reward = Math.round(rewardRate * 86400);
         const weekly_reward = Math.round(rewardRate * 604800);
         // 产出比例
         const daily_rewardPerToken = daily_reward / totalSupply;
@@ -202,33 +223,61 @@ export async function getStrategyAPY(list) {
         // 本金币价格
         const vaultPrice = await getTokenPrice(list, name);
         // ROI = 日产出占比 & 挖出币的价格 * 100 / 本金
-        const yfiiDailyROI = (daily_rewardPerToken * strategyPrice) * 100 / (vaultPrice);
-        const yfiiWeeklyROI = (weekly_rewardPerToken * strategyPrice) * 100 / (vaultPrice);
+        const yfiiDailyROI =
+          (daily_rewardPerToken * strategyPrice * 100) / vaultPrice;
+        const yfiiWeeklyROI =
+          (weekly_rewardPerToken * strategyPrice * 100) / vaultPrice;
         // APY
-        yfiiDailyAPY = ((1 + (yfiiDailyROI / 100))**365 - 1) * 100;
-        yfiiWeeklyAPY = ((1 + (yfiiWeeklyROI / 100))**52 - 1) * 100;
+        yfiiDailyAPY = ((1 + yfiiDailyROI / 100) ** 365 - 1) * 100;
+        yfiiWeeklyAPY = ((1 + yfiiWeeklyROI / 100) ** 52 - 1) * 100;
+        yfiiAPY = yfiiWeeklyROI * 52;
 
         console.log(177);
         console.log('name', name);
         console.log('reward', daily_reward, weekly_reward);
-        console.log('rewardPerToken', daily_rewardPerToken, weekly_rewardPerToken);
+        console.log(
+          'rewardPerToken',
+          daily_rewardPerToken,
+          weekly_rewardPerToken,
+        );
         console.log('price', strategyPrice, vaultPrice);
         console.log('ROI', yfiiDailyROI, yfiiWeeklyROI);
-        console.log(181, name, 'Daily ROI in USD', `${toFixed(yfiiDailyROI, 4)}%`);
-        console.log(182, name, 'APY (Daily)', `${toFixed(((1 + (yfiiDailyROI / 100))**365 - 1) * 100, 4)}%`);
-        console.log(181, name, 'Weekly ROI in USD', `${toFixed(yfiiWeeklyROI, 4)}%`);
-        console.log(182, name, 'APY (Weekly)', `${toFixed(((1 + (yfiiWeeklyROI / 100))**52 - 1) * 100, 4)}%`);
+        console.log(
+          181,
+          name,
+          'Daily ROI in USD',
+          `${toFixed(yfiiDailyROI, 4)}%`,
+        );
+        console.log(
+          182,
+          name,
+          'APY (Daily)',
+          `${toFixed(((1 + yfiiDailyROI / 100) ** 365 - 1) * 100, 4)}%`,
+        );
+        console.log(
+          181,
+          name,
+          'Weekly ROI in USD',
+          `${toFixed(yfiiWeeklyROI, 4)}%`,
+        );
+        console.log(
+          182,
+          name,
+          'APY (Weekly)',
+          `${toFixed(((1 + yfiiWeeklyROI / 100) ** 52 - 1) * 100, 4)}%`,
+        );
         return {
           ...item,
           yfiiDailyROI: toFixed(yfiiDailyROI, 4),
           yfiiWeeklyROI: toFixed(yfiiWeeklyROI, 4),
           yfiiDailyAPY: toFixed(yfiiDailyAPY, 4),
           yfiiWeeklyAPY: toFixed(yfiiWeeklyAPY, 4),
+          yfiiAPY: toFixed(yfiiAPY, 4),
         };
       }
       // Curve 池年华计算
       if (strategyName.indexOf('Curve') > -1) {
-        [ yfiiDailyAPY, yfiiWeeklyAPY ] = await getCurveAPY(curveName);
+        [yfiiDailyAPY, yfiiWeeklyAPY] = await getCurveAPY(curveName);
         return {
           ...item,
           yfiiDailyAPY,
@@ -236,7 +285,7 @@ export async function getStrategyAPY(list) {
         };
       }
       return item;
-    })
+    }),
   );
   return apyBackList;
 }
@@ -257,8 +306,12 @@ export async function getGrapPoolInfo(pool, strategy, token) {
   }
   // console.log(200, token, rewardRate, rate);
   return {
-    rewardRate: +(new BigNumber(rewardRate).dividedBy(new BigNumber(1e18)).toFixed(2)),
-    totalSupply: +(new BigNumber(totalSupply).dividedBy(new BigNumber(1e18)).toFixed(2))
+    rewardRate: +new BigNumber(rewardRate)
+      .dividedBy(new BigNumber(1e18))
+      .toFixed(2),
+    totalSupply: +new BigNumber(totalSupply)
+      .dividedBy(new BigNumber(1e18))
+      .toFixed(2),
   };
 }
 
@@ -274,10 +327,7 @@ export async function getCurveAPY(token) {
     console.log(e);
   }
   // console.log(token, yfiiDailyAPY, yfiiWeeklyAPY);
-  return [
-    toFixed(yfiiDailyAPY * 100, 4),
-    toFixed(yfiiWeeklyAPY * 100, 4)
-  ];
+  return [toFixed(yfiiDailyAPY * 100, 4), toFixed(yfiiWeeklyAPY * 100, 4)];
 }
 
 // 获取名称方法
@@ -301,8 +351,7 @@ export async function getBalance(contract, tokenInfo) {
   let balance = 0;
   try {
     balance = await contract.methods.balance().call();
-  } catch (e) {
-  }
+  } catch (e) {}
   let decimalsValue = new BigNumber(10).exponentiatedBy(decimals);
   // console.log(133, name, decimals, balanceValue);
   return new BigNumber(balance).dividedBy(decimalsValue).toFixed(0);
@@ -314,24 +363,27 @@ export async function getStrategyBalance(contract, tokenInfo) {
   let strategyBalance = 0;
   try {
     strategyBalance = await contract.methods.balanceOf().call();
-  } catch (e) {
-  }
+  } catch (e) {}
   let decimalsValue = new BigNumber(10).exponentiatedBy(decimals);
   return new BigNumber(strategyBalance).dividedBy(decimalsValue).toFixed(0);
 }
 
 // 获取法币报价
 export async function fetchTokenPrice(data) {
-  let tokens = data.map((item) => (item.id || item.name).toLocaleLowerCase());
-  const res = await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${tokens}&vs_currencies=usd`);
-  return data.map((item) => {
+  let tokens = data.map(item => (item.id || item.name).toLocaleLowerCase());
+  const res = await axios.get(
+    `https://api.coingecko.com/api/v3/simple/price?ids=${tokens}&vs_currencies=usd`,
+  );
+  return data.map(item => {
     const { name, balance } = item;
     const id = (item.id || name).toLocaleLowerCase();
     let usd = 0;
     let balancePrice = 0;
     try {
       usd = res.data[id].usd || 0;
-      balancePrice = new BigNumber(balance).multipliedBy(new BigNumber(usd)).toFixed(2);
+      balancePrice = new BigNumber(balance)
+        .multipliedBy(new BigNumber(usd))
+        .toFixed(2);
     } catch (e) {
       console.log(192, e);
     }
@@ -347,24 +399,26 @@ export async function fetchTokenPrice(data) {
 
 // 遍历获取 token 价格
 export async function getTokenPrice(list, token) {
-  const index = list.findIndex((item) => item.name === token);
+  const index = list.findIndex(item => item.name === token);
   let usd = 0;
   if (index > -1) {
     const { price } = list[index];
     usd = price.usd;
   } else {
-    const { data } = await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${token}&vs_currencies=usd`);
+    const { data } = await axios.get(
+      `https://api.coingecko.com/api/v3/simple/price?ids=${token}&vs_currencies=usd`,
+    );
     usd = data[token].usd;
   }
   return usd;
 }
 
 const toFixed = function(num, fixed) {
-  const re = new RegExp('^-?\\d+(?:.\\d{0,' + (fixed || -1) + '})?')
-  const arr = num.toString().match(re)
+  const re = new RegExp('^-?\\d+(?:.\\d{0,' + (fixed || -1) + '})?');
+  const arr = num.toString().match(re);
   if (arr && arr.length > 0) {
-    return arr[0]
+    return arr[0];
   } else {
-    return '0'
+    return '0';
   }
-}
+};

@@ -213,8 +213,8 @@ export async function getStrategyAPY(list) {
           name,
         );
         // 产出
-        const daily_reward = Math.round(rewardRate * 86400);
-        const weekly_reward = Math.round(rewardRate * 604800);
+        const daily_reward = rewardRate * 86400;
+        const weekly_reward = rewardRate * 604800;
         // 产出比例
         const daily_rewardPerToken = daily_reward / totalSupply;
         const weekly_rewardPerToken = weekly_reward / totalSupply;
@@ -233,35 +233,33 @@ export async function getStrategyAPY(list) {
         yfiiAPY = yfiiWeeklyROI * 52;
 
         console.log(177);
-        console.log('name', name);
-        console.log('reward', daily_reward, weekly_reward);
+        console.log(name, 'rewardRate', rewardRate);
+        console.log(name, 'totalSupply', totalSupply);
+        console.log(name, 'reward', daily_reward, weekly_reward);
         console.log(
+          name,
           'rewardPerToken',
           daily_rewardPerToken,
           weekly_rewardPerToken,
         );
-        console.log('price', strategyPrice, vaultPrice);
-        console.log('ROI', yfiiDailyROI, yfiiWeeklyROI);
+        console.log(name, 'price', strategyPrice, vaultPrice);
+        console.log(name, 'ROI', yfiiDailyROI, yfiiWeeklyROI);
         console.log(
-          181,
           name,
           'Daily ROI in USD',
           `${toFixed(yfiiDailyROI, 4)}%`,
         );
         console.log(
-          182,
           name,
           'APY (Daily)',
           `${toFixed(((1 + yfiiDailyROI / 100) ** 365 - 1) * 100, 4)}%`,
         );
         console.log(
-          181,
           name,
           'Weekly ROI in USD',
           `${toFixed(yfiiWeeklyROI, 4)}%`,
         );
         console.log(
-          182,
           name,
           'APY (Weekly)',
           `${toFixed(((1 + yfiiWeeklyROI / 100) ** 52 - 1) * 100, 4)}%`,
@@ -277,11 +275,12 @@ export async function getStrategyAPY(list) {
       }
       // Curve 池年华计算
       if (strategyName.indexOf('Curve') > -1) {
-        [yfiiDailyAPY, yfiiWeeklyAPY] = await getCurveAPY(curveName);
+        [yfiiAPY] = await getCurveAPY(curveName);
         return {
           ...item,
-          yfiiDailyAPY,
-          yfiiWeeklyAPY,
+          // yfiiDailyAPY,
+          // yfiiWeeklyAPY,
+          yfiiAPY
         };
       }
       return item;
@@ -307,11 +306,9 @@ export async function getGrapPoolInfo(pool, strategy, token) {
   // console.log(200, token, rewardRate, rate);
   return {
     rewardRate: +new BigNumber(rewardRate)
-      .dividedBy(new BigNumber(1e18))
-      .toFixed(2),
+      .dividedBy(new BigNumber(1e18)),
     totalSupply: +new BigNumber(totalSupply)
-      .dividedBy(new BigNumber(1e18))
-      .toFixed(2),
+      .dividedBy(new BigNumber(1e18)),
   };
 }
 
@@ -320,14 +317,17 @@ export async function getCurveAPY(token) {
   const res = await axios.get(`https://www.curve.fi/raw-stats/apys.json`);
   let yfiiDailyAPY;
   let yfiiWeeklyAPY;
+  let yfiiAPY;
   try {
     yfiiDailyAPY = res.data.apy.day[token];
-    yfiiWeeklyAPY = res.data.apy.week[token];
+    yfiiWeeklyAPY = res.data.apy.weekly[token];
+    yfiiAPY = res.data.apy.total[token];
   } catch (e) {
     console.log(e);
   }
   // console.log(token, yfiiDailyAPY, yfiiWeeklyAPY);
-  return [toFixed(yfiiDailyAPY * 100, 4), toFixed(yfiiWeeklyAPY * 100, 4)];
+  // return [toFixed(yfiiDailyAPY * 100, 4), toFixed(yfiiWeeklyAPY * 100, 4)];
+  return [toFixed(yfiiAPY * 100), 4];
 }
 
 // 获取名称方法

@@ -320,7 +320,7 @@ export async function getCurveAPY(token) {
   let yfiiAPY;
   try {
     yfiiDailyAPY = res.data.apy.day[token];
-    yfiiWeeklyAPY = res.data.apy.weekly[token];
+    yfiiWeeklyAPY = res.data.apy.week[token];
     yfiiAPY = res.data.apy.total[token];
   } catch (e) {
     console.log(e);

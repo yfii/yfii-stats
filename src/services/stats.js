@@ -291,7 +291,7 @@ export async function getStrategyAPY(list) {
         console.log(
           name,
           'APY (unstable)',
-          `${toFixed(yfiiAPY * 100, 4)}%`,
+          `${toFixed(yfiiAPY, 4)}%`,
         );
         return {
           ...item,

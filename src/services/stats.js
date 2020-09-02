@@ -323,13 +323,12 @@ export async function getStrategyAPY(list) {
       }
       // Curve 池年华计算
       if (strategyNameType === 'curve') {
-        yfiiAPY = getCurveAPY(vaultToken);
-        // [yfiiAPY] = await getCurveAPY(curveName);
+        yfiiAPY = await getCurveAPY(vaultToken);
         return {
           ...item,
           // yfiiDailyAPY,
           // yfiiWeeklyAPY,
-          yfiiAPY
+          yfiiAPY: toFixed(yfiiAPY, 4),
         };
       }
       return item;

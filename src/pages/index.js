@@ -99,12 +99,10 @@ const StatsPage = ({ stats }) => {
                             </TableCell>
                             <TableCell align="right">
                               <div>
-                                {row.yfiiAPY ? (
-                                  <span>
-                                    {+row.yfiiWeeklyROI || '-'}% /
-                                    {+row.yfiiAPY || '-'}%
-                                  </span>
-                                ) : null}
+                                <span>
+                                  {row.yfiiWeeklyROI || '-'}% /
+                                  {row.yfiiAPY || '-'}%
+                                </span>
                               </div>
                             </TableCell>
                             <TableCell align="right">

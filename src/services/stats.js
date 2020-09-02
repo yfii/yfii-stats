@@ -6,6 +6,8 @@ import erc20Abi from '@/abi/ERC20.json';
 import vaultAbi from '@/abi/vault.json';
 import strategyAbi from '@/abi/strategy.json';
 
+import { getCurveAPY } from './curve';
+
 let web3;
 // 自定义机枪池配置
 // id 获取法币报价字段名
@@ -70,6 +72,10 @@ const STRATEGYPOOLS = {
     strategyNameType: 'yfii',
     vaultToken: 'yfii-finance',
   },
+  "Curve DAO Token": {
+    strategyNameType: 'curve',
+    vaultToken: 'curve-dao-token',
+  },
 };
 
 // 获取配置文件
@@ -84,8 +90,11 @@ export async function getVaultsConfig() {
 // 获取 Strategy 配置
 export function getStrategyPool(strategyName) {
   const [, name] = strategyName.split(':');
-  console.log(86, name, STRATEGYPOOLS[name]);
-  return STRATEGYPOOLS[name];
+  console.log(86, strategyName, name, STRATEGYPOOLS[name]);
+  if (strategyName) {
+    return STRATEGYPOOLS[name];
+  }
+  return {};
 }
 
 // 合并机枪池配置至本地配置
@@ -216,21 +225,32 @@ export async function getStrategyAPY(list) {
       let yfiiDailyAPY = 0;
       let yfiiWeeklyAPY = 0;
       let yfiiAPY = 0;
-      let pool;
+      let now = new Date().getTime();
+      // 策略池子名称, 挖出的 token
+      const { strategyNameType, vaultToken } = getStrategyPool(strategyName);
+      if (!strategyNameType || !vaultToken) { return item }
       try {
         // 获取投资池子地址
         pool = await strategyContract.methods.pool().call();
       } catch (e) {
       }
+      let pool;
       // grap 池 && zombie 池年华计算
       if (pool) {
-        // 策略池子名称, 挖出的 token
-        const { strategyNameType, vaultToken } = getStrategyPool(strategyName);
-        const { rewardRate, totalSupply } = await getPoolInfo(
+        // 获取策略池信息
+        const { rewardRate, totalSupply, periodFinish } = await getPoolInfo(
           pool,
           strategyNameType,
           name,
         );
+        // 矿已经挖完了
+        if (now > periodFinish) {
+          return {
+            ...item,
+            yfiiWeeklyROI: 0,
+            yfiiAPY: 0,
+          };
+        }
         // 产出
         const daily_reward = rewardRate * 86400;
         const weekly_reward = rewardRate * 604800;
@@ -250,7 +270,6 @@ export async function getStrategyAPY(list) {
           (weekly_rewardPerToken * strategyPrice * 100) / vaultPrice;
         const yfiiYearROI =
           (year_rewardPerToken * strategyPrice * 100) / vaultPrice;
-
         // APY
         yfiiDailyAPY = ((1 + yfiiDailyROI / 100) ** 365 - 1) * 100;
         yfiiWeeklyAPY = ((1 + yfiiWeeklyROI / 100) ** 52 - 1) * 100;
@@ -295,16 +314,17 @@ export async function getStrategyAPY(list) {
         );
         return {
           ...item,
-          yfiiDailyROI: toFixed(yfiiDailyROI, 4),
+          // yfiiDailyROI: toFixed(yfiiDailyROI, 4),
           yfiiWeeklyROI: toFixed(yfiiWeeklyROI, 4),
-          yfiiDailyAPY: toFixed(yfiiDailyAPY, 4),
-          yfiiWeeklyAPY: toFixed(yfiiWeeklyAPY, 4),
+          // yfiiDailyAPY: toFixed(yfiiDailyAPY, 4),
+          // yfiiWeeklyAPY: toFixed(yfiiWeeklyAPY, 4),
           yfiiAPY: toFixed(yfiiAPY, 4),
         };
       }
       // Curve 池年华计算
-      if (strategyName.indexOf('Curve') > -1) {
-        [yfiiAPY] = await getCurveAPY(curveName);
+      if (strategyNameType === 'curve') {
+        yfiiAPY = getCurveAPY(vaultToken);
+        // [yfiiAPY] = await getCurveAPY(curveName);
         return {
           ...item,
           // yfiiDailyAPY,
@@ -327,10 +347,11 @@ export async function getPoolInfo(pool, strategy, token) {
   } catch (e) {
     console.log(e);
   }
-  let rewardRate, totalSupply;
+  let rewardRate, totalSupply, periodFinish;
   if (poolConract) {
     rewardRate = await poolConract.methods.rewardRate().call();
     totalSupply = await poolConract.methods.totalSupply().call();
+    periodFinish = await poolConract.methods.periodFinish().call();
   }
   // console.log(200, token, rewardRate, rate);
   return {
@@ -338,26 +359,27 @@ export async function getPoolInfo(pool, strategy, token) {
       .dividedBy(new BigNumber(1e18)),
     totalSupply: +new BigNumber(totalSupply)
       .dividedBy(new BigNumber(1e18)),
+    periodFinish: +periodFinish * 1000,
   };
 }
 
 // 获取 Curve 池子年化率
-export async function getCurveAPY(token) {
-  const res = await axios.get(`https://www.curve.fi/raw-stats/apys.json`);
-  let yfiiDailyAPY;
-  let yfiiWeeklyAPY;
-  let yfiiAPY;
-  try {
-    yfiiDailyAPY = res.data.apy.day[token];
-    yfiiWeeklyAPY = res.data.apy.week[token];
-    yfiiAPY = res.data.apy.total[token];
-  } catch (e) {
-    console.log(e);
-  }
-  // console.log(token, yfiiDailyAPY, yfiiWeeklyAPY);
-  // return [toFixed(yfiiDailyAPY * 100, 4), toFixed(yfiiWeeklyAPY * 100, 4)];
-  return [toFixed(yfiiAPY * 100), 4];
-}
+// export async function getCurveAPY(token) {
+//   const res = await axios.get(`https://www.curve.fi/raw-stats/apys.json`);
+//   let yfiiDailyAPY;
+//   let yfiiWeeklyAPY;
+//   let yfiiAPY;
+//   try {
+//     yfiiDailyAPY = res.data.apy.day[token];
+//     yfiiWeeklyAPY = res.data.apy.week[token];
+//     yfiiAPY = res.data.apy.total[token];
+//   } catch (e) {
+//     console.log(e);
+//   }
+//   // console.log(token, yfiiDailyAPY, yfiiWeeklyAPY);
+//   // return [toFixed(yfiiDailyAPY * 100, 4), toFixed(yfiiWeeklyAPY * 100, 4)];
+//   return [toFixed(yfiiAPY * 100), 4];
+// }
 
 // 获取名称方法
 export async function getName(contract) {

@@ -1,4 +1,5 @@
-import { getVaultsList } from '../services/stats';
+// import { getVaultsList } from '../services/stats';
+import { getVaultsList } from '../services/v2/stats';
 
 export default {
   state: {
@@ -16,6 +17,7 @@ export default {
   effects: {
     *getVaultsList(_, { put, call }) {
       const res = yield call(getVaultsList);
+      console.log(res);
       yield put({
         type: 'updateState',
         payload: {

@@ -110,8 +110,10 @@ export async function getVaultsList() {
       } = await initContract(item);
       // 获取币种信息
       let tokenInfo = await getTokenInfo(tokenContract, item);
+      console.log(113, 'tokenInfo', tokenInfo);
       // 获取池子名称
       let assetName = (await getAssetName(vaultContract)) || item.assetName;
+      console.log(116, 'assetName', assetName);
       // 获取池子余额
       let balance = await getBalance(vaultContract, tokenInfo);
       // 获取策略名称
@@ -155,9 +157,11 @@ export async function initContract(item) {
   let strategyContract = {};
   tokenContract = new web3.eth.Contract(erc20Abi, item.token);
   vaultContract = new web3.eth.Contract(vaultAbi, item.vault);
-  if (item.strategy) {
-    strategyContract = new web3.eth.Contract(strategyAbi, item.strategy);
+  let strategy = item['strategy'] || item['Strategy'];
+  if (strategy) {
+    strategyContract = new web3.eth.Contract(strategyAbi, strategy);
   }
+  console.log(164, vaultContract);
   return {
     tokenContract,
     vaultContract,

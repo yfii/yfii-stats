@@ -21,6 +21,8 @@ const StatsPage = ({ stats }) => {
   let total = 0;
   vaultsList.forEach(item => (total += +item.balancePrice));
 
+  console.log(0, vaultsList);
+
   return (
     <div className={styles.statsPage}>
       <Container>
@@ -64,7 +66,7 @@ const StatsPage = ({ stats }) => {
                   {(vaultsList || []).length ? (
                     <TableBody>
                       {(vaultsList || [])
-                        .filter(fi => +fi.balance > 0)
+                        // .filter(fi => +fi.balance > 0)
                         .map(row => (
                           <TableRow key={row.token}>
                             <TableCell>
@@ -91,7 +93,7 @@ const StatsPage = ({ stats }) => {
                             </TableCell>
                             <TableCell align="right">
                               <a
-                                href={`https://etherscan.io/address/${row.strategy}`}
+                                href={`https://etherscan.io/address/${row.Strategy}`}
                                 target="_blank"
                               >
                                 {row.strategyName}

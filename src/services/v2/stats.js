@@ -141,6 +141,7 @@ export async function getStrategyAPY(list) {
 }
 
 export async function getVaultsList() {
+  await getOldPoolData();
   const config = await getVaultsConfig();
   let commonBack = await Promise.all(
     (config || []).map(async item => {
@@ -185,6 +186,43 @@ export async function getVaultsList() {
   const priceBackData = await fetchTokenPrice(commonBack);
   // 计算 APY
   const apyBackData = await getStrategyAPY(priceBackData);
-  console.log(172, apyBackData);
-  return apyBackData;
+
+  let oldPoolData = await getOldPoolData();
+  oldPoolData.push(...apyBackData)
+  console.log(172, oldPoolData);
+  return oldPoolData;
+  // return apyBackData;
+}
+
+export async function getOldPoolData() {
+  const res = await axios.get('https://api.coinmarketcap.com/data-api/v1/farming/yield/latest');
+  const farmingProjects = res.data.data.farmingProjects;
+  const oldPoolIndex = farmingProjects.findIndex(fi => fi.name === "yfii.finance");
+  const oldPoolAllData = farmingProjects[oldPoolIndex].poolList;
+  console.log(oldPoolAllData)
+  const oldPoolData = [{
+    Strategy: "0xb81D3cB2708530ea990a287142b82D058725C092",
+    assetName: oldPoolAllData[0].name,
+    balancePrice: oldPoolAllData[0].totalStake,
+    id: oldPoolAllData[0].id,
+    name: oldPoolAllData[0].pair,
+    strategyName: oldPoolAllData[0].name,
+    token: "0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
+    vault: "0xb81D3cB2708530ea990a287142b82D058725C092",
+    yfiiWeeklyROI: toFixed(oldPoolAllData[0].weeklyROI, 4),
+    yfiiAPY: toFixed(oldPoolAllData[0].yearlyROI, 4)
+  },
+  {
+    Strategy: "0xAFfcD3D45cEF58B1DfA773463824c6F6bB0Dc13a",
+    assetName: oldPoolAllData[1].name,
+    balancePrice: oldPoolAllData[1].totalStake,
+    id: oldPoolAllData[1].id,
+    name: oldPoolAllData[1].pair,
+    strategyName: oldPoolAllData[1].name,
+    token: "0x16cAC1403377978644e78769Daa49d8f6B6CF565",
+    vault: "0xAFfcD3D45cEF58B1DfA773463824c6F6bB0Dc13a",
+    yfiiWeeklyROI: toFixed(oldPoolAllData[1].weeklyROI, 4),
+    yfiiAPY: toFixed(oldPoolAllData[1].yearlyROI, 4)
+  }]
+  return oldPoolData;
 }

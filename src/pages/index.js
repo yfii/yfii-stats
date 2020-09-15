@@ -68,7 +68,7 @@ const StatsPage = ({ stats }) => {
                       {(vaultsList || [])
                         // .filter(fi => +fi.balance > 0)
                         .map(row => (
-                          <TableRow key={row.token}>
+                          <TableRow key={row.name}>
                             <TableCell>
                               <Box
                                 display="flex"
@@ -108,7 +108,7 @@ const StatsPage = ({ stats }) => {
                               </div>
                             </TableCell>
                             <TableCell align="right">
-                              <span>{(+row.balance).toLocaleString()}</span>
+                              {Boolean(row.balance) && <span>{(+row.balance).toLocaleString()}</span>}
                               &nbsp;
                               <a
                                 href={`https://etherscan.io/token/${row.token}`}

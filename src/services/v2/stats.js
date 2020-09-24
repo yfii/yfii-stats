@@ -141,57 +141,60 @@ export async function getStrategyAPY(list) {
 }
 
 export async function getVaultsList() {
-  await getOldPoolData();
-  const config = await getVaultsConfig();
-  let commonBack = await Promise.all(
-    (config || []).map(async item => {
-      // 初始化合约
-      const {
-        tokenContract,
-        vaultContract,
-        strategyContract,
-      } = await initContract(item);
-      // 获取币种信息
-      let tokenInfo = await getTokenInfo(tokenContract, item);
-      console.log(113, 'strategyContract', strategyContract);
-      // 获取池子名称
-      let assetName = (await getAssetName(vaultContract)) || item.assetName;
-      console.log(116, 'assetName', assetName);
-      // 获取池子余额
-      let balance = await getBalance(vaultContract, tokenInfo);
-      console.log(114, 'balance', balance);
-      // 获取策略名称
-      let strategyName = '';
-      let strategyBalance = 0;
-      if (item.Strategy) {
-        strategyName = await getStrategyName(strategyContract);
-        // 获取策略池内余额
-        // strategyBalance = await getStrategyBalance(strategyContract, tokenInfo);
-      }
-      let index = vaults.findIndex(fi => fi.name === item.name);
-      let vaultsData = {};
-      if (index > -1) {
-        vaultsData = vaults[index];
-      }
-      return {
-        ...item,
-        balance,
-        assetName,
-        strategyName,
-        ...vaultsData,
-      };
-    })
-  )
-  // 批量获取交易所法币报价
-  const priceBackData = await fetchTokenPrice(commonBack);
-  // 计算 APY
-  const apyBackData = await getStrategyAPY(priceBackData);
+  const res = await axios.get('https://api1.dfi.money/stats/api/');
+  // console.log(res.data.data)
+  
+  // const config = await getVaultsConfig();
+  // let commonBack = await Promise.all(
+  //   (config || []).map(async item => {
+  //     // 初始化合约
+  //     const {
+  //       tokenContract,
+  //       vaultContract,
+  //       strategyContract,
+  //     } = await initContract(item);
+  //     // 获取币种信息
+  //     let tokenInfo = await getTokenInfo(tokenContract, item);
+  //     console.log(113, 'strategyContract', strategyContract);
+  //     // 获取池子名称
+  //     let assetName = (await getAssetName(vaultContract)) || item.assetName;
+  //     console.log(116, 'assetName', assetName);
+  //     // 获取池子余额
+  //     let balance = await getBalance(vaultContract, tokenInfo);
+  //     console.log(114, 'balance', balance);
+  //     // 获取策略名称
+  //     let strategyName = '';
+  //     let strategyBalance = 0;
+  //     if (item.Strategy) {
+  //       strategyName = await getStrategyName(strategyContract);
+  //       // 获取策略池内余额
+  //       // strategyBalance = await getStrategyBalance(strategyContract, tokenInfo);
+  //     }
+  //     let index = vaults.findIndex(fi => fi.name === item.name);
+  //     let vaultsData = {};
+  //     if (index > -1) {
+  //       vaultsData = vaults[index];
+  //     }
+  //     return {
+  //       ...item,
+  //       balance,
+  //       assetName,
+  //       strategyName,
+  //       ...vaultsData,
+  //     };
+  //   })
+  // )
+  // // 批量获取交易所法币报价
+  // const priceBackData = await fetchTokenPrice(commonBack);
+  // // 计算 APY
+  // const apyBackData = await getStrategyAPY(priceBackData);
 
-  let oldPoolData = await getOldPoolData();
-  oldPoolData.push(...apyBackData)
-  console.log(172, oldPoolData);
-  return oldPoolData;
+  // let oldPoolData = await getOldPoolData();
+  // oldPoolData.push(...apyBackData)
+  // console.log(172, oldPoolData);
+  // return oldPoolData;
   // return apyBackData;
+  return res.data.data;
 }
 
 export async function getOldPoolData() {

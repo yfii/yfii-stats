@@ -56,6 +56,7 @@ const StatsPage = ({ stats }) => {
                 <Table className={styles.table}>
                   <TableHead>
                     <TableRow>
+                      <TableCell>Source</TableCell>
                       <TableCell>Asset</TableCell>
                       <TableCell align="right">Strategy</TableCell>
                       <TableCell align="right">ROI weekly / APY</TableCell>
@@ -67,8 +68,16 @@ const StatsPage = ({ stats }) => {
                     <TableBody>
                       {(vaultsList || [])
                         // .filter(fi => +fi.balance > 0)
-                        .map(row => (
-                          <TableRow key={row.name}>
+                        .map((row, index) => (
+                          <TableRow key={index}>
+                            <TableCell>
+                              <a
+                                  href={row.sourceUrl}
+                                  target="_blank"
+                                >
+                                  {row.source}
+                              </a>
+                            </TableCell>
                             <TableCell>
                               <Box
                                 display="flex"
@@ -76,14 +85,14 @@ const StatsPage = ({ stats }) => {
                                 alignItems="center"
                               >
                                 <a
-                                  href={`https://etherscan.io/address/${row.vault}`}
+                                  href={`https://${row.source === 'eth' ? 'ether': row.source}scan.com/address/${row.vault}`}
                                   target="_blank"
                                 >
                                   <Description fontSize="small" />
                                 </a>
                                 <span>{row.assetName}</span>(
                                 <a
-                                  href={`https://etherscan.io/token/${row.token}`}
+                                  href={`https://${row.source === 'eth' ? 'ether': row.source}scan.com/token/${row.token}`}
                                   target="_blank"
                                 >
                                   {row.name}
@@ -93,7 +102,7 @@ const StatsPage = ({ stats }) => {
                             </TableCell>
                             <TableCell align="right">
                               <a
-                                href={`https://etherscan.io/address/${row.Strategy}`}
+                                href={`https://${row.source === 'eth' ? 'ether': row.source}scan.com/address/${row.Strategy}`}
                                 target="_blank"
                               >
                                 {row.strategyName}
@@ -111,7 +120,7 @@ const StatsPage = ({ stats }) => {
                               {Boolean(row.balance) && <span>{(+row.balance).toLocaleString()}</span>}
                               &nbsp;
                               <a
-                                href={`https://etherscan.io/token/${row.token}`}
+                                href={`https://${row.source === 'eth' ? 'ether': row.source}scan.com/token/${row.token}`}
                                 target="_blank"
                               >
                                 {row.name}
